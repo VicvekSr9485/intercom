@@ -173,6 +173,10 @@ Sidechannels:
 - `--sidechannel-max-bytes <n>` : payload size guard.
 - `--sidechannel-allow-remote-open 0|1` : accept/reject `/sc_open` requests.
 - `--sidechannel-auto-join 0|1` : auto‑join requested channels.
+- `--sidechannel-pow 0|1` : enable/disable Hashcash-style proof‑of‑work (**default: on** for all sidechannels).
+- `--sidechannel-pow-difficulty <bits>` : required leading‑zero bits (**default: 12**).
+- `--sidechannel-pow-entry 0|1` : restrict PoW to entry channel (`0000intercom`) only.
+- `--sidechannel-pow-channels "chan1,chan2"` : require PoW only on these channels (overrides entry toggle).
 
 SC-Bridge (WebSocket):
 - `--sc-bridge 1` : enable WebSocket bridge for sidechannels.

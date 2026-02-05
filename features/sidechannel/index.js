@@ -1,9 +1,39 @@
 import Feature from 'trac-peer/src/artifacts/feature.js';
 import b4a from 'b4a';
 import c from '../../node_modules/compact-encoding/index.js';
+import crypto from 'crypto';
 
 const toTopic = (name) => b4a.alloc(32).fill(name);
 const toProtocol = (name) => `sidechannel/${name}`;
+
+const stableStringify = (value) => {
+  if (value === null || value === undefined) return 'null';
+  if (typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(',')}]`;
+  }
+  const keys = Object.keys(value).sort();
+  return `{${keys.map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`).join(',')}}`;
+};
+
+const sha256Hex = (input) => crypto.createHash('sha256').update(input).digest('hex');
+
+const countLeadingZeroBits = (hex) => {
+  let bits = 0;
+  for (let i = 0; i < hex.length; i += 1) {
+    const nibble = Number.parseInt(hex[i], 16);
+    if (nibble === 0) {
+      bits += 4;
+      continue;
+    }
+    // Count leading zeros in this nibble.
+    for (let mask = 8; mask > 0; mask >>= 1) {
+      if (nibble & mask) return bits;
+      bits += 1;
+    }
+  }
+  return bits;
+};
 
 class Sidechannel extends Feature {
   constructor(peer, config = {}) {
@@ -35,6 +65,12 @@ class Sidechannel extends Feature {
     this.strikeWindowMs = Number.isSafeInteger(config.strikeWindowMs) ? config.strikeWindowMs : 5000;
     this.blockMs = Number.isSafeInteger(config.blockMs) ? config.blockMs : 30_000;
     this.seen = new Map();
+    this.powEnabled = config.powEnabled === true;
+    this.powDifficulty = Number.isInteger(config.powDifficulty) ? config.powDifficulty : 0;
+    this.powRequireEntry = config.powRequireEntry === true;
+    this.powRequiredChannels = Array.isArray(config.powRequiredChannels)
+      ? new Set(config.powRequiredChannels.map((c) => String(c)))
+      : null;
 
     const initial = Array.isArray(config.channels) ? config.channels : [];
     for (const name of initial) this._registerChannel(name);
@@ -126,7 +162,7 @@ class Sidechannel extends Feature {
     const ts = this._now();
     const from = this.peer?.wallet?.publicKey ?? null;
     const id = `${from ?? 'anon'}:${ts}:${Math.random().toString(36).slice(2, 10)}`;
-    return {
+    const payload = {
       type: 'sidechannel',
       id,
       channel,
@@ -136,6 +172,8 @@ class Sidechannel extends Feature {
       ts,
       ttl: this.relayTtl,
     };
+    this._attachPow(payload);
+    return payload;
   }
 
   requestOpen(newChannel, viaChannel = null) {
@@ -165,6 +203,50 @@ class Sidechannel extends Feature {
         record.message.send(relayed);
       }
     }
+  }
+
+  _powRequired(channel) {
+    if (!this.powEnabled || this.powDifficulty <= 0) return false;
+    if (this.powRequiredChannels) return this.powRequiredChannels.has(channel);
+    if (this.powRequireEntry) return channel === this.entryChannel;
+    return true;
+  }
+
+  _powBase(payload, nonce) {
+    return stableStringify({
+      id: payload?.id ?? null,
+      channel: payload?.channel ?? null,
+      from: payload?.from ?? null,
+      origin: payload?.origin ?? null,
+      message: payload?.message ?? null,
+      ts: payload?.ts ?? null,
+      nonce,
+    });
+  }
+
+  _attachPow(payload) {
+    const channel = payload?.channel ?? '';
+    if (!this._powRequired(channel)) return;
+    const difficulty = this.powDifficulty;
+    let nonce = 0;
+    while (true) {
+      const hash = sha256Hex(this._powBase(payload, nonce));
+      if (countLeadingZeroBits(hash) >= difficulty) {
+        payload.pow = { nonce, difficulty };
+        return;
+      }
+      nonce += 1;
+    }
+  }
+
+  _checkPow(payload, channel) {
+    if (!this._powRequired(channel)) return true;
+    const pow = payload?.pow;
+    if (!pow || typeof pow.nonce !== 'number') return false;
+    const difficulty = this.powDifficulty;
+    if (!Number.isInteger(difficulty) || difficulty <= 0) return false;
+    const hash = sha256Hex(this._powBase(payload, pow.nonce));
+    return countLeadingZeroBits(hash) >= difficulty;
   }
 
   _registerChannel(name) {
@@ -243,6 +325,12 @@ class Sidechannel extends Feature {
           console.log(
             `[sidechannel:${entry.name}] recv ${payloadBytes} bytes from ${this._getRemoteKey(connection)}`
           );
+        }
+        if (!this._checkPow(payload, entry.name)) {
+          if (this.debug) {
+            console.log(`[sidechannel:${entry.name}] drop (invalid pow) from ${this._getRemoteKey(connection)}`);
+          }
+          return;
         }
         if (!this._checkRate(connection, payloadBytes)) {
           if (this.debug) {

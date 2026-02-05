@@ -76,6 +76,31 @@ const sidechannelAutoJoinRaw =
   env.SIDECHANNEL_AUTO_JOIN ||
   '';
 const sidechannelAutoJoin = parseBool(sidechannelAutoJoinRaw, false);
+const sidechannelPowRaw =
+  (flags['sidechannel-pow'] && String(flags['sidechannel-pow'])) ||
+  env.SIDECHANNEL_POW ||
+  '';
+const sidechannelPowEnabled = parseBool(sidechannelPowRaw, true);
+const sidechannelPowDifficultyRaw =
+  (flags['sidechannel-pow-difficulty'] && String(flags['sidechannel-pow-difficulty'])) ||
+  env.SIDECHANNEL_POW_DIFFICULTY ||
+  '12';
+const sidechannelPowDifficulty = Number.parseInt(sidechannelPowDifficultyRaw, 10);
+const sidechannelPowEntryRaw =
+  (flags['sidechannel-pow-entry'] && String(flags['sidechannel-pow-entry'])) ||
+  env.SIDECHANNEL_POW_ENTRY ||
+  '';
+const sidechannelPowRequireEntry = parseBool(sidechannelPowEntryRaw, false);
+const sidechannelPowChannelsRaw =
+  (flags['sidechannel-pow-channels'] && String(flags['sidechannel-pow-channels'])) ||
+  env.SIDECHANNEL_POW_CHANNELS ||
+  '';
+const sidechannelPowChannels = sidechannelPowChannelsRaw
+  ? sidechannelPowChannelsRaw
+      .split(',')
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0)
+  : null;
 
 const sidechannelEntry = '0000intercom';
 const sidechannelExtras = sidechannelsRaw
@@ -272,6 +297,10 @@ const sidechannel = new Sidechannel(peer, {
   entryChannel: sidechannelEntry,
   allowRemoteOpen: sidechannelAllowRemoteOpen,
   autoJoinOnOpen: sidechannelAutoJoin,
+  powEnabled: sidechannelPowEnabled,
+  powDifficulty: Number.isInteger(sidechannelPowDifficulty) ? sidechannelPowDifficulty : undefined,
+  powRequireEntry: sidechannelPowRequireEntry,
+  powRequiredChannels: sidechannelPowChannels || undefined,
   onMessage: scBridgeEnabled
     ? (channel, payload, connection) => scBridge.handleSidechannelMessage(channel, payload, connection)
     : null,

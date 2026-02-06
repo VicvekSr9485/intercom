@@ -108,6 +108,11 @@ const sidechannelDebugRaw =
   env.SIDECHANNEL_DEBUG ||
   '';
 const sidechannelDebug = parseBool(sidechannelDebugRaw, false);
+const sidechannelQuietRaw =
+  (flags['sidechannel-quiet'] && String(flags['sidechannel-quiet'])) ||
+  env.SIDECHANNEL_QUIET ||
+  '';
+const sidechannelQuiet = parseBool(sidechannelQuietRaw, false);
 const sidechannelMaxBytesRaw =
   (flags['sidechannel-max-bytes'] && String(flags['sidechannel-max-bytes'])) ||
   env.SIDECHANNEL_MAX_BYTES ||
@@ -455,7 +460,9 @@ const sidechannel = new Sidechannel(peer, {
   welcomeByChannel: sidechannelWelcomeMap.size > 0 ? sidechannelWelcomeMap : undefined,
   onMessage: scBridgeEnabled
     ? (channel, payload, connection) => scBridge.handleSidechannelMessage(channel, payload, connection)
-    : null,
+    : sidechannelQuiet
+      ? () => {}
+      : null,
 });
 peer.sidechannel = sidechannel;
 

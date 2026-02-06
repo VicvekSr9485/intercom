@@ -244,6 +244,7 @@ Core:
 Sidechannels:
 - `--sidechannels a,b,c` (or `--sidechannel a,b,c`) : extra sidechannels to join at startup.
 - `--sidechannel-debug 1` : verbose sidechannel logs.
+- `--sidechannel-quiet 0|1` : suppress printing received sidechannel messages to stdout (still relays). Useful for always-on relay/backbone peers.
 - `--sidechannel-max-bytes <n>` : payload size guard.
 - `--sidechannel-allow-remote-open 0|1` : accept/reject `/sc_open` requests.
 - `--sidechannel-auto-join 0|1` : auto‑join requested channels.
@@ -421,6 +422,9 @@ Intercom must expose and describe all interactive commands so agents can operate
 - **Message size guard** defaults to 1,000,000 bytes (JSON‑encoded payload).
 - **Diagnostics:** use `--sidechannel-debug 1` and `/sc_stats` to confirm connection counts and message flow.
 - **DHT readiness:** sidechannels wait for the DHT to be fully bootstrapped before joining topics. On cold start this can take a few seconds (watch for `Sidechannel: ready`).
+- **Robustness hardener (invite-only + relay):** if you want invite-only messages to propagate reliably, invite **more than just the endpoints**.  
+  Relay can only forward through peers that are **authorized** for the channel, so add a small set of always-on backbone peers (3–5 is a good start) and invite them too.  
+  Run backbone peers “quiet” (relay but don’t print or accept dynamic opens): `--sidechannel-quiet 1 --sidechannel-allow-remote-open 0 --sidechannel-auto-join 0` (and don’t enable SC-Bridge).
 - **Dynamic channel requests**: `/sc_open` posts a request in the entry channel; you can auto‑join with `--sidechannel-auto-join 1`.
 - **Invites**: uses the **peer pubkey** (transport identity). Invites may also include the inviter’s **trac address** for payments, but verification is by peer pubkey.
 - **Invite delivery**: the invite is a signed JSON/base64 blob. You can deliver it via `0000intercom` **or** out‑of‑band (email, website, QR, etc.).

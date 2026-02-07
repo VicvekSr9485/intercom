@@ -247,6 +247,7 @@ Sidechannels:
 - `--sidechannels a,b,c` (or `--sidechannel a,b,c`) : extra sidechannels to join at startup.
 - `--sidechannel-debug 1` : verbose sidechannel logs.
 - `--sidechannel-quiet 0|1` : suppress printing received sidechannel messages to stdout (still relays). Useful for always-on relay/backbone peers.
+  - Note: quiet mode affects stdout only. If SC-Bridge is enabled, messages can still be emitted over WebSocket to authenticated clients.
 - `--sidechannel-max-bytes <n>` : payload size guard.
 - `--sidechannel-allow-remote-open 0|1` : accept/reject `/sc_open` requests.
 - `--sidechannel-auto-join 0|1` : auto‑join requested channels.

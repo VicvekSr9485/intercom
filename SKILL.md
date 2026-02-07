@@ -151,9 +151,11 @@ pear -v
 ```bash
 git clone https://github.com/Trac-Systems/intercom ./intercom
 cd intercom
+```
+Then change into the **app folder that contains this SKILL.md** and its `package.json`, and install deps there:
+```bash
 npm install
 ```
-Then change into the **app folder that contains this SKILL.md** and its `package.json`.  
 All commands below assume you are working from that app folder.
 
 ### Core Updates (npm + Pear)
@@ -264,6 +266,7 @@ Sidechannels:
 - `--sidechannel-owner-write-channels "chan1,chan2"` : owner‑only send for these channels only.
 - `--sidechannel-welcome "<chan:welcome_b64|@file,chan2:welcome_b64|@file>"` : **pre‑signed welcome** per channel (from `/sc_welcome`). Optional for `0000intercom`, required for non‑entry channels if welcome enforcement is on.  
   Tip: put the `welcome_b64` in a file and use `@./path/to/welcome.b64` to avoid long copy/paste commands.
+  - Runtime note: running `/sc_welcome ...` on the owner stores the welcome **in-memory** and the owner will auto-send it to new connections. To persist across restarts, still pass it via `--sidechannel-welcome`.
 - **Welcome required:** messages are dropped until a valid owner‑signed welcome is verified (invited or not).  
   **Exception:** `0000intercom` is **name‑only** and does **not** require owner or welcome.
 
@@ -456,7 +459,8 @@ Intercom must expose and describe all interactive commands so agents can operate
 2) Share the **owner key** and **welcome** with all peers that should accept the channel:
    - `--sidechannel-owner "pub1:<owner-pubkey-hex>"`
    - `--sidechannel-welcome "pub1:<welcome_b64>"`
-   - Joiners must include these at **startup** (not only in `/sc_join`).
+   - For deterministic behavior, joiners should include these at **startup** (not only in `/sc_join`).
+     - If a joiner starts without `--sidechannel-welcome`, it will drop messages until it receives a valid welcome control from the owner (owner peers auto-send welcomes once configured).
 3) For **invite‑only** channels, include the welcome in the invite or open request:
    - `/sc_invite --channel "priv1" --pubkey "<peer>" --welcome <json|b64|@file>`
    - `/sc_open --channel "priv1" --invite <json|b64|@file> --welcome <json|b64|@file>`

@@ -568,6 +568,11 @@ class SampleProtocol extends Protocol{
                 return;
             }
             const welcome = { payload, sig: sigHex };
+            // Store the welcome in-memory so the owner peer can auto-send it to new connections
+            // without requiring a restart (and so /sc_invite can embed it by default).
+            try {
+                this.peer.sidechannel.acceptInvite(String(channel), null, welcome);
+            } catch (_e) {}
             const welcomeJson = JSON.stringify(welcome);
             const welcomeB64 = b4a.toString(b4a.from(welcomeJson), 'base64');
             console.log(welcomeJson);

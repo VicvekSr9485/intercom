@@ -492,6 +492,9 @@ class Sidechannel extends Feature {
     }
     if (!PeerWallet.verify(sigBuf, b4a.from(message), pubBuf)) return false;
     this._rememberWelcome(channel);
+    // Persist the verified welcome in-memory so the owner can auto-send it to new connections
+    // without requiring a restart (welcome is still bound to the configured owner key).
+    this.welcomeByChannel.set(normalizeChannel(channel), welcome);
     return true;
   }
 

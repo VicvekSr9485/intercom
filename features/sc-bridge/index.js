@@ -109,6 +109,8 @@ class ScBridge extends Feature {
       id: payload?.id ?? null,
       from: payload?.from ?? null,
       origin: payload?.origin ?? null,
+      // Message signatures are not secret; exposing them helps devs verify authenticity/debug drops.
+      sig: payload?.sig ?? payload?.signature ?? null,
       relayedBy: payload?.relayedBy ?? null,
       ttl: payload?.ttl ?? null,
       ts: payload?.ts ?? Date.now(),

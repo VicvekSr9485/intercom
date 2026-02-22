@@ -296,6 +296,7 @@ Answer: start with `--sc-bridge 1 --sc-bridge-token <token> [--sc-bridge-port <p
 Ask for: channel name, owner key, welcome configured, invite status, and whether PoW is enabled.  
 Answer: verify `--sidechannel-owner` + `--sidechannel-welcome` are set on both peers; confirm invite required; turn on `--sidechannel-debug 1`.
 - If invite-only: ensure the peer started with `--sidechannel-invite-required 1`, `--sidechannel-invite-channels "<name>"`, and `--sidechannel-inviter-keys "<owner-pubkey-hex>"`, then join with `/sc_join --invite ...`. If you start without invite enforcement, you'll connect but remain unauthorized (sender will log `skip (unauthorized)` and you won't receive payloads).
+- If the owner is offline while a peer joins: pass **both** invite and welcome at join time (`/sc_join --invite ... --welcome ...` or WS `join` with both fields). If the peer already opened that channel before valid invite/welcome was loaded, force a reconnection so auth/welcome control frames are resent (WS: `leave` then `join`; TTY: restart the peer).
 
 ## Interactive UI Options (CLI Commands)
 Intercom must expose and describe all interactive commands so agents can operate the network reliably.

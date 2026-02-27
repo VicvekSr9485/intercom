@@ -9,11 +9,13 @@ import { createConfig as createMsbConfig, ENV as MSB_ENV } from 'trac-msb/src/co
 import { ensureTextCodecs } from 'trac-peer/src/textCodec.js';
 import { getPearRuntime, ensureTrailingSlash } from 'trac-peer/src/runnerArgs.js';
 import { Terminal } from 'trac-peer/src/terminal/index.js';
-import SampleProtocol from './contract/protocol.js';
-import SampleContract from './contract/contract.js';
+import AgentRpcProtocol from './contract/protocol.js';
+import AgentRpcContract from './contract/contract.js';
 import { Timer } from './features/timer/index.js';
 import Sidechannel from './features/sidechannel/index.js';
 import ScBridge from './features/sc-bridge/index.js';
+import RpcHandler from './features/rpc-handler/index.js';
+import { registerAllExampleTools } from './features/rpc-handler/tools.js';
 
 const { env, storeLabel, flags } = getPearRuntime();
 
@@ -305,6 +307,29 @@ const scBridgeDebugRaw =
   '';
 const scBridgeDebug = parseBool(scBridgeDebugRaw, false);
 
+// RPC Handler options
+const rpcEnabledRaw =
+  (flags['rpc-enabled'] && String(flags['rpc-enabled'])) ||
+  (flags['rpc'] && String(flags['rpc'])) ||
+  env.RPC_ENABLED ||
+  '';
+const rpcEnabled = parseBool(rpcEnabledRaw, false);
+const rpcToolsRaw =
+  (flags['rpc-tools'] && String(flags['rpc-tools'])) ||
+  env.RPC_TOOLS ||
+  '';
+const rpcRegisterExamples = parseBool(rpcToolsRaw, rpcEnabled);
+const rpcDebugRaw =
+  (flags['rpc-debug'] && String(flags['rpc-debug'])) ||
+  env.RPC_DEBUG ||
+  '';
+const rpcDebug = parseBool(rpcDebugRaw, false);
+const rpcToolPriceRaw =
+  (flags['rpc-tool-price'] && String(flags['rpc-tool-price'])) ||
+  env.RPC_TOOL_PRICE ||
+  '0.1';
+const rpcToolPrice = String(rpcToolPriceRaw);
+
 // Optional: override DHT bootstrap nodes (host:port list) for faster local tests.
 // Note: this affects all Hyperswarm joins (subnet replication + sidechannels).
 const peerDhtBootstrapRaw =
@@ -353,7 +378,7 @@ const msbConfig = createMsbConfig(MSB_ENV.MAINNET, {
   storeName: msbStoreName,
   storesDirectory: msbStoresDirectory,
   enableInteractiveMode: false,
-  dhtBootstrap: msbDhtBootstrap || undefined,
+  ...(msbDhtBootstrap && msbDhtBootstrap.length > 0 ? { dhtBootstrap: msbDhtBootstrap } : {}),
 });
 
 const msbBootstrapHex = b4a.toString(msbConfig.bootstrap, 'hex');
@@ -370,7 +395,7 @@ const peerConfig = createPeerConfig(PEER_ENV.MAINNET, {
   enableBackgroundTasks: true,
   enableUpdater: true,
   replicate: true,
-  dhtBootstrap: peerDhtBootstrap || undefined,
+  ...(peerDhtBootstrap && peerDhtBootstrap.length > 0 ? { dhtBootstrap: peerDhtBootstrap } : {}),
 });
 
 const ensureKeypairFile = async (keyPairPath) => {
@@ -397,8 +422,8 @@ const peer = new Peer({
   config: peerConfig,
   msb,
   wallet: new Wallet(),
-  protocol: SampleProtocol,
-  contract: SampleContract,
+  protocol: AgentRpcProtocol,
+  contract: AgentRpcContract,
 });
 await peer.ready();
 
@@ -442,6 +467,10 @@ if (scBridgeEnabled) {
   const portDisplay = Number.isSafeInteger(scBridgePort) ? scBridgePort : 49222;
   console.log('SC-Bridge:', `ws://${scBridgeHost}:${portDisplay}`);
 }
+if (rpcEnabled) {
+  console.log('Agent RPC: Enabled');
+  console.log('RPC Tools:', rpcRegisterExamples ? `${rpcToolPrice} TNK/call` : 'custom');
+}
 console.log('================================================================');
 console.log('');
 
@@ -481,6 +510,32 @@ if (scBridgeEnabled) {
   });
 }
 
+// RPC Handler setup
+let rpcHandler = null;
+if (rpcEnabled) {
+  rpcHandler = new RpcHandler(peer, {
+    debug: rpcDebug,
+    autoRegisterInContract: true
+  });
+
+  // Register example tools if requested
+  if (rpcRegisterExamples) {
+    registerAllExampleTools(rpcHandler, {
+      priceInTNK: rpcToolPrice,
+      debug: rpcDebug
+    });
+  }
+
+  await rpcHandler.start();
+  
+  // Attach to SC-Bridge if available
+  if (scBridge) {
+    scBridge.attachRpcHandler(rpcHandler);
+  }
+
+  console.log(`[Agent RPC] Enabled with ${rpcHandler.listTools().length} tools`);
+}
+
 const sidechannel = new Sidechannel(peer, {
   channels: [sidechannelEntry, ...sidechannelExtras],
   debug: sidechannelDebug,
@@ -504,9 +559,16 @@ const sidechannel = new Sidechannel(peer, {
   welcomeByChannel: sidechannelWelcomeMap.size > 0 ? sidechannelWelcomeMap : undefined,
   onMessage: scBridgeEnabled
     ? (channel, payload, connection) => scBridge.handleSidechannelMessage(channel, payload, connection)
-    : sidechannelQuiet
-      ? () => {}
-      : null,
+    : rpcEnabled && rpcHandler
+      ? async (channel, payload, connection) => {
+          const response = await rpcHandler.handleMessage(channel, payload, connection);
+          if (response && peer.sidechannel) {
+            peer.sidechannel.broadcast(channel, response);
+          }
+        }
+      : sidechannelQuiet
+        ? () => {}
+        : null,
 });
 peer.sidechannel = sidechannel;
 

@@ -1,0 +1,120 @@
+Script started on Fri Feb 27 16:33:23 2026
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h  pkill -f pear-runtime 2>/dev/null; sleep 1; rm -rf /Users [K//user/intercom/stores; echo "clean"[?2004l
+clean
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h  python3 -c "[?2004l
+[0m[27m[24m[Jdquote> [K[?2004hccontent = '''#!/bin/bash[?2004l
+zsh: event not found: /bin/bash
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h## Agent RPC Demo - Step 2: Provider with RPC Tools[?2004l
+zsh: command not found: #
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004heexport PATH=\"/Users/user/Library/Application Support/pear [K//bin:\$PATH\"[?2004l
+export: not valid in this context: Support/pear/bin:$PATH"
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004hccd \"\$(dirname \"\$0\")\"[?2004l
+zsh: no matches found: "$(dirname "$0")"
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004hiif [ -z \"\$1\" ]; then[?2004l
+[0m[27m[24m[Jthen> [K[?2004h     echo \"Usage: ./demo-provider.sh <peer-writer-key-hex>\"[?2004l
+[0m[27m[24m[Jthen> [K[?2004h     echo \"\"[?2004l
+[0m[27m[24m[Jthen> [K[?2004h     echo \"Copy the 'Peer writer key (hex)' from the admin terminal.\"[?2004l
+[0m[27m[24m[Jthen> [K[?2004h     exit 1[?2004l
+[0m[27m[24m[Jthen> [K[?2004hffi[?2004l
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004hBBOOTSTRAP=\$1[?2004l
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004heecho \"=================================\"[?2004l
+"================================="
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004heecho \" Agent RPC - Provider\"[?2004l
+" Agent RPC - Provider"
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004heecho \"=================================\"[?2004l
+"================================="
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004heecho \"\"[?2004l
+""
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004heecho \"Bootstrap: \$BOOTSTRAP\"[?2004l
+"Bootstrap: $BOOTSTRAP"
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004heecho \"Starting provider with 19 RPC tools...\"[?2004l
+"Starting provider with 19 RPC tools..."
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004heecho \"\"[?2004l
+""
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004hppear run . \\\\[?2004l
+zsh: command not found: pear
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h   --peer-store-name provider \\\\[?2004l
+zsh: command not found: --peer-store-name
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h   --msb-store-name provider-msb \\\\[?2004l
+zsh: command not found: --msb-store-name
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h   --subnet-channel agent-rpc-demo \\\\[?2004l
+zsh: command not found: --subnet-channel
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h   --subnet-bootstrap \"\$BOOTSTRAP\" \\\\[?2004l
+zsh: command not found: --subnet-bootstrap
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h   --rpc 1 \\\\[?2004l
+zsh: command not found: --rpc
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h   --rpc-tools 1 \\\\[?2004l
+zsh: command not found: --rpc-tools
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h   --rpc-tool-price 0.1 \\\\[?2004l
+zsh: command not found: --rpc-tool-price
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h   --rpc-debug 1[?2004l
+zsh: command not found: --rpc-debug
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004heecho \"Provider stopped.\"[?2004l
+"Provider stopped."
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h''''[?2004l
+[0m[27m[24m[Jquote> [K[?2004hwwith open('/Users/user/intercom/demo-provider.sh', 'w') as f:[?2004l
+[0m[27m[24m[Jquote> [K[?2004h     f.write(content)[?2004l
+[0m[27m[24m[Jquote> [K[?2004hpprint('written')[?2004l
+[0m[27m[24m[Jquote> [K[?2004h"[?2004l
+[0m[27m[24m[Jquote> [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h  q[?2004l
+zsh: command not found: q
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h  head -5 /Users/user/intercom/demo-provider.sh && echo "-- [K--" && head -5 /Users/user/intercom/demo-consumer.sh[?2004l
+zsh: command not found: head
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h  export PATH="/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin [K::/opt/homebrew/bin" && head -5 /Users/user/intercom/demo-provider.sh[?2004l
+#!/bin/bash
+# Agent RPC Demo - Provider Script
+export PATH="/Users/user/Library/Application Support/pear/bin:$PATH"
+
+echo "=================================="
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h  export PATH="/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin [K::/opt/homebrew/bin" && chmod +x /Users/user/intercom/demo-admin.sh /Users/user/intercom/demo-pr [Koovider.sh /Users/user/intercom/demo-consumer.sh && echo "executable"[?2004l
+executable
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h  export PATH="/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin [K::/opt/homebrew/bin:/opt/homebrew/opt/node@22/bin" && grep -n "onMessage\|console.log\|payload"  [K//Users/user/intercom/features/sidechannel/index.js | head -30[?2004l
+69:    this.onMessage = typeof config.onMessage === 'function' ? config.onMessage : null;
+250:          console.log(`[sidechannel] rate-limit block ${this._getRemoteKey(connection)} for ${this.blockMs}ms`);
+262:    // Encode keys as hex strings, not Buffers, because we transmit payloads via JSON encoding.
+265:    const payload = {
+275:    if (invite) payload.invite = invite;
+276:    this._attachPow(payload);
+279:    this._attachSig(payload);
+280:    return payload;
+300:  _relay(channel, payload, originConnection) {
+302:    const control = payload?.message?.control;
+305:    const ttl = Number.isFinite(payload?.ttl) ? payload.ttl : 0;
+308:      ...payload,
+396:  _normalizeInvitePayload(payload) {
+398:      channel: String(payload?.channel ?? ''),
+399:      inviteePubKey: normalizeKeyHex(payload?.inviteePubKey) || '',
+400:      inviterPubKey: normalizeKeyHex(payload?.inviterPubKey) || '',
+401:      inviterAddress: payload?.inviterAddress ?? null,
+402:      issuedAt: Number(payload?.issuedAt),
+403:      expiresAt: Number(payload?.expiresAt),
+404:      nonce: String(payload?.nonce ?? ''),
+405:      version: Number.isFinite(payload?.version) ? Number(payload.version) : 1,
+411:    const payload = invite.payload && typeof invite.payload === 'object' ? invite.payload : invite;
+414:    const normalized = this._normalizeInvitePayload(payload);
+456:  _checkInvite(payload, channel, connection) {
+464:    const invite = payload?.invite || payload?.message?.invite;
+469:  _normalizeWelcomePayload(payload) {
+471:      channel: normalizeChannel(payload?.channel),
+472:      ownerPubKey: normalizeKeyHex(payload?.ownerPubKey) || '',
+473:      text: String(payload?.text ?? ''),
+474:      issuedAt: Number(payload?.issuedAt),
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h[?2004l
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h  grep -n "this.onMessage\|\.onMessage(" /Users/user/interc [Koom/features/sidechannel/index.js | head -20[?2004l
+69:    this.onMessage = typeof config.onMessage === 'function' ? config.onMessage : null;
+900:          if (this.onMessage) {
+901:            this.onMessage(entry.name, payload, connection);
+[1m[7m%[27m[1m[0m                                                                                               [0m[27m[24m[Juser@VicvekSr-MacBook-Pro intercom % [K[?2004h

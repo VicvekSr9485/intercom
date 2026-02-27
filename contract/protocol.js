@@ -85,18 +85,17 @@ const parseWelcomeArg = (raw) => {
     return null;
 };
 
-class SampleProtocol extends Protocol{
+class AgentRpcProtocol extends Protocol{
 
     /**
-     * Extending from Protocol inherits its capabilities and allows you to define your own protocol.
-     * The protocol supports the corresponding contract. Both files come in pairs.
-     *
-     * Instances of this class do NOT run in contract context. The constructor is only called once on Protocol
-     * instantiation.
-     *
-     * this.peer: an instance of the entire Peer class, the actual node that runs the contract and everything else.
-     * this.base: the database engine, provides await this.base.view.get('key') to get unsigned data (not finalized data).
-     * this.options: the option stack passed from Peer instance.
+     * Agent RPC Protocol
+     * 
+     * Handles transaction commands and CLI interactions for the Agent RPC service registry.
+     * Maps user commands to contract functions for registering, updating, and querying services.
+     * 
+     * this.peer: an instance of the entire Peer class
+     * this.base: the database engine
+     * this.options: the option stack passed from Peer instance
      *
      * @param peer
      * @param base
@@ -120,123 +119,298 @@ class SampleProtocol extends Protocol{
     }
 
     /**
-     * In order for a transaction to successfully trigger,
-     * you need to create a mapping for the incoming tx command,
-     * pointing at the contract function to execute.
-     *
-     * You can perform basic sanitization here, but do not use it to protect contract execution.
-     * Instead, use the built-in schema support for in-contract sanitization instead
-     * (Contract.addSchema() in contract constructor).
-     *
+     * Map incoming transaction commands to contract functions
+     * 
+     * Supports both simple string commands and JSON payloads for complex operations
+     * 
      * @param command
      * @returns {{type: string, value: *}|null}
      */
     mapTxCommand(command){
-        // prepare the payload
         let obj = { type : '', value : null };
-        /*
-        Triggering contract function in terminal will look like this:
-
-        /tx --command 'something'
-
-        You can also simulate a tx prior broadcast
-
-        /tx --command 'something' --sim 1
-
-        To programmatically execute a transaction from "outside",
-        the api function "this.api.tx()" needs to be exposed by adding
-        "api_tx_exposed : true" to the Peer instance options.
-        Once exposed, it can be used directly through peer.protocol_instance.api.tx()
-
-        Please study the superclass of this Protocol and Protocol.api to learn more.
-        */
-        if(command === 'something'){
-            // type points at the "storeSomething" function in the contract.
-            obj.type = 'storeSomething';
-            // value can be null as there is no other payload, but the property must exist.
-            obj.value = null;
-            // return the payload to be used in your contract
-            return obj;
-        } else if (command === 'read_snapshot') {
-            obj.type = 'readSnapshot';
+        
+        // Simple read command: list all services
+        if(command === 'list_services'){
+            obj.type = 'listServices';
             obj.value = null;
             return obj;
-        } else if (command === 'read_chat_last') {
-            obj.type = 'readChatLast';
-            obj.value = null;
-            return obj;
-        } else if (command === 'read_timer') {
-            obj.type = 'readTimer';
-            obj.value = null;
-            return obj;
-        } else {
-            /*
-            now we assume our protocol allows to submit a json string with information
-            what to do (the op) then we pass the parsed object to the value.
-            the accepted json string can be executed as tx like this:
-
-            /tx --command '{ "op" : "do_something", "some_key" : "some_data" }'
-
-            Of course we can simulate this, as well:
-
-            /tx --command '{ "op" : "do_something", "some_key" : "some_data" }' --sim 1
-            */
-            const json = this.safeJsonParse(command);
-            if(json.op !== undefined && json.op === 'do_something'){
-                obj.type = 'submitSomething';
-                obj.value = json;
-                return obj;
-            } else if (json.op !== undefined && json.op === 'read_key') {
-                obj.type = 'readKey';
-                obj.value = json;
-                return obj;
-            } else if (json.op !== undefined && json.op === 'read_chat_last') {
-                obj.type = 'readChatLast';
-                obj.value = null;
-                return obj;
-            } else if (json.op !== undefined && json.op === 'read_timer') {
-                obj.type = 'readTimer';
-                obj.value = null;
-                return obj;
-            }
         }
-        // return null if no case matches.
-        // if you do not return null, your protocol might behave unexpected.
+
+        // Parse JSON commands
+        const json = this.safeJsonParse(command);
+        if(json === undefined) return null;
+
+        // Register a new service
+        // Usage: /tx --command '{"op":"register_service","serviceId":"img_gen_v1","method":"generate_image","description":"AI image generation","priceInTNK":"5.0","category":"ai"}'
+        if(json.op === 'register_service'){
+            obj.type = 'registerService';
+            obj.value = json;
+            return obj;
+        }
+
+        // Update an existing service
+        // Usage: /tx --command '{"op":"update_service","serviceId":"img_gen_v1","priceInTNK":"7.5"}'
+        if(json.op === 'update_service'){
+            obj.type = 'updateService';
+            obj.value = json;
+            return obj;
+        }
+
+        // Remove a service
+        // Usage: /tx --command '{"op":"remove_service","serviceId":"img_gen_v1"}'
+        if(json.op === 'remove_service'){
+            obj.type = 'removeService';
+            obj.value = json;
+            return obj;
+        }
+
+        // Get a specific service
+        // Usage: /tx --command '{"op":"get_service","serviceId":"img_gen_v1"}'
+        if(json.op === 'get_service'){
+            obj.type = 'getServiceById';
+            obj.value = json;
+            return obj;
+        }
+
+        // Get services by provider
+        // Usage: /tx --command '{"op":"get_provider_services","providerAddress":"trac1xxx..."}'
+        if(json.op === 'get_provider_services'){
+            obj.type = 'getProviderServices';
+            obj.value = json;
+            return obj;
+        }
+
         return null;
     }
 
     /**
-     * Prints additional options for your protocol underneath the system ones in terminal.
+     * Print Agent RPC commands available in the terminal
      *
      * @returns {Promise<void>}
      */
     async printOptions(){
         console.log(' ');
-        console.log('- Sample Commands:');
-        console.log("- /print | use this flag to print some text to the terminal: '--text \"I am printing\"");
-        console.log('- /get --key "<key>" [--confirmed true|false] | reads subnet state key (confirmed defaults to true).');
-        console.log('- /msb | prints MSB txv + lengths (local MSB node view).');
-        console.log('- /tx --command "read_chat_last" | prints last chat message captured by contract.');
-        console.log('- /tx --command "read_timer" | prints current timer feature value.');
-        console.log('- /sc_join --channel "<name>" | join an ephemeral sidechannel (no autobase).');
-        console.log('- /sc_open --channel "<name>" [--via "<channel>"] [--invite <json|b64|@file>] [--welcome <json|b64|@file>] | request others to open a sidechannel.');
-        console.log('- /sc_send --channel "<name>" --message "<text>" [--invite <json|b64|@file>] | send message over sidechannel.');
-        console.log('- /sc_invite --channel "<name>" --pubkey "<peer-pubkey-hex>" [--ttl <sec>] [--welcome <json|b64|@file>] | create a signed invite.');
-        console.log('- /sc_welcome --channel "<name>" --text "<message>" | create a signed welcome.');
-        console.log('- /sc_stats | show sidechannel channels + connection count.');
-        // further protocol specific options go here
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('  AGENT RPC COMMANDS');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log(' ');
+        console.log('Service Registry (write operations require transactions):');
+        console.log('  /service_list                          | List all active RPC services');
+        console.log('  /service_get --id <serviceId>          | Get details of a specific service');
+        console.log('  /service_provider --address <addr>     | Get services by provider address');
+        console.log(' ');
+        console.log('  /service_register \\');
+        console.log('    --id <serviceId> \\');
+        console.log('    --method <methodName> \\');
+        console.log('    --desc "<description>" \\');
+        console.log('    --price <TNK> \\');
+        console.log('    [--category <category>]              | Register a new RPC service');
+        console.log(' ');
+        console.log('  /service_update \\');
+        console.log('    --id <serviceId> \\');
+        console.log('    [--desc "<new description>"] \\');
+        console.log('    [--price <new TNK>] \\');
+        console.log('    [--category <new category>]          | Update your service (owner only)');
+        console.log(' ');
+        console.log('  /service_remove --id <serviceId>       | Remove your service (owner only)');
+        console.log(' ');
+        console.log('Sidechannel (JSON-RPC transport):');
+        console.log('  /sc_join --channel "<name>"            | Join a sidechannel');
+        console.log('  /sc_send --channel "<name>" --message "<text>" | Send message over sidechannel');
+        console.log('  /sc_open --channel "<name>"            | Request others to open a sidechannel');
+        console.log('  /sc_stats                              | Show sidechannel stats');
+        console.log(' ');
+        console.log('RPC Tools (if enabled):');
+        console.log('  /rpc_list                              | List local RPC tools');
+        console.log('  /rpc_call --method <name> --params <json> --channel <name> | Test RPC call');
+        console.log(' ');
+        console.log('Utilities:');
+        console.log('  /get --key "<key>"                     | Read subnet state key');
+        console.log('  /msb                                   | Show MSB status (balance, validators)');
+        console.log(' ');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log(' ');
+        console.log('JSON-RPC Format (send via sidechannel):');
+        console.log('  Request:  {"jsonrpc":"2.0","method":"generate_image","params":["prompt"],"id":1}');
+        console.log('  Response: {"jsonrpc":"2.0","result":"<data>","id":1}');
+        console.log('  Error:    {"jsonrpc":"2.0","error":{"code":-32000,"message":"error"},"id":1}');
+        console.log(' ');
     }
 
     /**
-     * Extend the terminal system commands and execute your custom ones for your protocol.
-     * This is not transaction execution itself (though can be used for it based on your requirements).
-     * For transactions, use the built-in /tx command in combination with command mapping (see above)
-     *
+     * Extend terminal commands with Agent RPC-specific functionality
+     * 
      * @param input
      * @returns {Promise<void>}
      */
     async customCommand(input) {
         await super.tokenizeInput(input);
+        
+        // ============ AGENT RPC COMMANDS ============
+        
+        if (this.input.startsWith("/service_list")) {
+            await this.api.tx('list_services');
+            return;
+        }
+
+        if (this.input.startsWith("/service_get")) {
+            const args = this.parseArgs(input);
+            const serviceId = args.id || args.serviceId || args.service;
+            if (!serviceId) {
+                console.log('Usage: /service_get --id <serviceId>');
+                return;
+            }
+            const command = JSON.stringify({ op: 'get_service', serviceId: String(serviceId) });
+            await this.api.tx(command);
+            return;
+        }
+
+        if (this.input.startsWith("/service_provider")) {
+            const args = this.parseArgs(input);
+            const providerAddress = args.address || args.addr || args.provider;
+            if (!providerAddress) {
+                console.log('Usage: /service_provider --address <trac1xxx...>');
+                return;
+            }
+            const command = JSON.stringify({ op: 'get_provider_services', providerAddress: String(providerAddress) });
+            await this.api.tx(command);
+            return;
+        }
+
+        if (this.input.startsWith("/service_register")) {
+            const args = this.parseArgs(input);
+            const serviceId = args.id || args.serviceId;
+            const method = args.method || args.m;
+            const description = args.desc || args.description || args.d;
+            const priceInTNK = args.price || args.p;
+            const category = args.category || args.cat || args.c;
+
+            if (!serviceId || !method || !priceInTNK) {
+                console.log('Usage: /service_register --id <serviceId> --method <methodName> --desc "<description>" --price <TNK> [--category <category>]');
+                return;
+            }
+
+            const command = JSON.stringify({
+                op: 'register_service',
+                serviceId: String(serviceId),
+                method: String(method),
+                description: String(description || ''),
+                priceInTNK: String(priceInTNK),
+                category: category ? String(category) : undefined
+            });
+
+            await this.api.tx(command);
+            return;
+        }
+
+        if (this.input.startsWith("/service_update")) {
+            const args = this.parseArgs(input);
+            const serviceId = args.id || args.serviceId;
+            const description = args.desc || args.description || args.d;
+            const priceInTNK = args.price || args.p;
+            const category = args.category || args.cat || args.c;
+
+            if (!serviceId || (!description && !priceInTNK && !category)) {
+                console.log('Usage: /service_update --id <serviceId> [--desc "<new description>"] [--price <new TNK>] [--category <new category>]');
+                return;
+            }
+
+            const command = JSON.stringify({
+                op: 'update_service',
+                serviceId: String(serviceId),
+                description: description ? String(description) : undefined,
+                priceInTNK: priceInTNK ? String(priceInTNK) : undefined,
+                category: category ? String(category) : undefined
+            });
+
+            await this.api.tx(command);
+            return;
+        }
+
+        if (this.input.startsWith("/service_remove")) {
+            const args = this.parseArgs(input);
+            const serviceId = args.id || args.serviceId || args.service;
+
+            if (!serviceId) {
+                console.log('Usage: /service_remove --id <serviceId>');
+                return;
+            }
+
+            const command = JSON.stringify({
+                op: 'remove_service',
+                serviceId: String(serviceId)
+            });
+
+            await this.api.tx(command);
+            return;
+        }
+
+        // ============ RPC TOOL COMMANDS ============
+
+        if (this.input.startsWith("/rpc_list")) {
+            if (!this.peer.scBridge?.rpcHandler) {
+                console.log('RPC handler not enabled. Start with --rpc 1');
+                return;
+            }
+            const tools = this.peer.scBridge.rpcHandler.listTools();
+            console.log(`Available RPC Tools (${tools.length}):`);
+            console.log('');
+            for (const tool of tools) {
+                console.log(`  ${tool.method}`);
+                console.log(`    Description: ${tool.description || 'N/A'}`);
+                console.log(`    Price: ${tool.priceInTNK} TNK`);
+                console.log(`    Category: ${tool.category}`);
+                console.log('');
+            }
+            return;
+        }
+
+        if (this.input.startsWith("/rpc_call")) {
+            const args = this.parseArgs(input);
+            const method = args.method || args.m;
+            const paramsRaw = args.params || args.p;
+            const channel = args.channel || args.ch || '0000intercom';
+
+            if (!method) {
+                console.log('Usage: /rpc_call --method <name> --params <json-array> [--channel <name>]');
+                console.log('Example: /rpc_call --method "calc.add" --params "[5,3]"');
+                return;
+            }
+
+            if (!this.peer.sidechannel) {
+                console.log('Sidechannel not available');
+                return;
+            }
+
+            let params = [];
+            if (paramsRaw) {
+                try {
+                    params = JSON.parse(String(paramsRaw));
+                    if (!Array.isArray(params)) {
+                        params = [params];
+                    }
+                } catch (e) {
+                    console.log('Invalid params JSON. Must be an array like [1,2] or ["text"]');
+                    return;
+                }
+            }
+
+            const rpcRequest = {
+                jsonrpc: '2.0',
+                method: String(method),
+                params: params,
+                id: Date.now()
+            };
+
+            console.log('Sending RPC request:', JSON.stringify(rpcRequest));
+            this.peer.sidechannel.broadcast(channel, rpcRequest);
+            console.log(`Request sent on channel: ${channel}`);
+            console.log('Watch for response in sidechannel messages...');
+            return;
+        }
+
+        // ============ UTILITY COMMANDS ============
+        
         if (this.input.startsWith("/get")) {
             const m = input.match(/(?:^|\s)--key(?:=|\s+)(\"[^\"]+\"|'[^']+'|\S+)/);
             const raw = m ? m[1].trim() : null;
@@ -589,11 +763,7 @@ class SampleProtocol extends Protocol{
             console.log({ channels, connectionCount });
             return;
         }
-        if (this.input.startsWith("/print")) {
-            const splitted = this.parseArgs(input);
-            console.log(splitted.text);
-        }
     }
 }
 
-export default SampleProtocol;
+export default AgentRpcProtocol;

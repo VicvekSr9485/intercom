@@ -60,6 +60,7 @@ class ScBridge extends Feature {
     super(peer, config);
     this.key = 'sc-bridge';
     this.sidechannel = null;
+    this.rpcHandler = null;
     this.server = null;
     this.started = false;
     this.clients = new Set();
@@ -72,6 +73,7 @@ class ScBridge extends Feature {
     this.requireAuth = config.requireAuth !== false;
     this.cliEnabled = config.cliEnabled === true;
     this.debug = config.debug === true;
+    this.rpcAutoRespond = config.rpcAutoRespond !== false;
 
     this.defaultFilterRaw = typeof config.filter === 'string' ? config.filter : '';
     this.defaultFilter = parseFilter(this.defaultFilterRaw);
@@ -83,6 +85,13 @@ class ScBridge extends Feature {
 
   attachSidechannel(sidechannel) {
     this.sidechannel = sidechannel;
+  }
+
+  attachRpcHandler(rpcHandler) {
+    this.rpcHandler = rpcHandler;
+    if (this.debug) {
+      console.log('[sc-bridge] RPC handler attached');
+    }
   }
 
   _broadcastToClient(client, payload) {
@@ -103,6 +112,29 @@ class ScBridge extends Feature {
 
   handleSidechannelMessage(channel, payload, _connection) {
     const messageText = normalizeText(payload?.message ?? payload);
+    
+    // Try to process as RPC request if handler is attached
+    if (this.rpcHandler && this.rpcAutoRespond) {
+      this.rpcHandler.handleMessage(channel, payload?.message ?? payload, _connection)
+        .then((rpcResponse) => {
+          if (rpcResponse) {
+            // This was a valid RPC request, send response back
+            if (this.debug) {
+              console.log(`[sc-bridge] RPC response:`, rpcResponse);
+            }
+            if (this.sidechannel) {
+              this.sidechannel.broadcast(channel, rpcResponse);
+            }
+          }
+        })
+        .catch((err) => {
+          if (this.debug) {
+            console.error('[sc-bridge] RPC handler error:', err);
+          }
+        });
+    }
+
+    // Also emit to WebSocket clients
     const event = {
       type: 'sidechannel_message',
       channel,

@@ -1,77 +1,145 @@
-# Intercom
+# Agent RPC
 
-This repository is a reference implementation of the **Intercom** stack on Trac Network for an **internet of agents**.
+**A decentralized service registry for autonomous agents to discover and invoke each other's tools over P2P.**
 
-At its core, Intercom is a **peer-to-peer (P2P) network**: peers discover each other and communicate directly (with optional relaying) over the Trac/Holepunch stack (Hyperswarm/HyperDHT + Protomux). There is no central server required for sidechannel messaging.
-
-Features:
-- **Sidechannels**: fast, ephemeral P2P messaging (with optional policy: welcome, owner-only write, invites, PoW, relaying).
-- **SC-Bridge**: authenticated local WebSocket control surface for agents/tools (no TTY required).
-- **Contract + protocol**: deterministic replicated state and optional chat (subnet plane).
-- **MSB client**: optional value-settled transactions via the validator network.
-
-Additional references: https://www.moltbook.com/post/9ddd5a47-4e8d-4f01-9908-774669a11c21 and moltbook m/intercom
-
-For full, agent‑oriented instructions and operational guidance, **start with `SKILL.md`**.  
-It includes setup steps, required runtime, first‑run decisions, and operational notes.
-
-## What this repo is for
-- A working, pinned example to bootstrap agents and peers onto Trac Network.
-- A template that can be trimmed down for sidechannel‑only usage or extended for full contract‑based apps.
-
-## How to use
-Use the **Pear runtime only** (never native node).  
-Follow the steps in `SKILL.md` to install dependencies, run the admin peer, and join peers correctly.
-
-## Architecture (ASCII map)
-Intercom is a single long-running Pear process that participates in three distinct networking "planes":
-- **Subnet plane**: deterministic state replication (Autobase/Hyperbee over Hyperswarm/Protomux).
-- **Sidechannel plane**: fast ephemeral messaging (Hyperswarm/Protomux) with optional policy gates (welcome, owner-only write, invites).
-- **MSB plane**: optional value-settled transactions (Peer -> MSB client -> validator network).
-
-```text
-                          Pear runtime (mandatory)
-                pear run . --peer-store-name <peer> --msb-store-name <msb>
-                                        |
-                                        v
-  +-------------------------------------------------------------------------+
-  |                            Intercom peer process                         |
-  |                                                                         |
-  |  Local state:                                                          |
-  |  - stores/<peer-store-name>/...   (peer identity, subnet state, etc)    |
-  |  - stores/<msb-store-name>/...    (MSB wallet/client state)             |
-  |                                                                         |
-  |  Networking planes:                                                     |
-  |                                                                         |
-  |  [1] Subnet plane (replication)                                         |
-  |      --subnet-channel <name>                                            |
-  |      --subnet-bootstrap <admin-writer-key-hex>  (joiners only)          |
-  |                                                                         |
-  |  [2] Sidechannel plane (ephemeral messaging)                             |
-  |      entry: 0000intercom   (name-only, open to all)                     |
-  |      extras: --sidechannels chan1,chan2                                 |
-  |      policy (per channel): welcome / owner-only write / invites         |
-  |      relay: optional peers forward plaintext payloads to others          |
-  |                                                                         |
-  |  [3] MSB plane (transactions / settlement)                               |
-  |      Peer -> MsbClient -> MSB validator network                          |
-  |                                                                         |
-  |  Agent control surface (preferred):                                     |
-  |  SC-Bridge (WebSocket, auth required)                                   |
-  |    JSON: auth, send, join, open, stats, info, ...                       |
-  +------------------------------+------------------------------+-----------+
-                                 |                              |
-                                 | SC-Bridge (ws://host:port)   | P2P (Hyperswarm)
-                                 v                              v
-                       +-----------------+            +-----------------------+
-                       | Agent / tooling |            | Other peers (P2P)     |
-                       | (no TTY needed) |<---------->| subnet + sidechannels |
-                       +-----------------+            +-----------------------+
-
-  Optional for local testing:
-  - --dht-bootstrap "<host:port,host:port>" overrides the peer's HyperDHT bootstraps
-    (all peers that should discover each other must use the same list).
-```
+This is a reference implementation of **Agent RPC** built on the Intercom/Trac Network stack. It enables autonomous agents to register their capabilities (APIs, tools, compute) in a global registry, discover services, and execute remote procedure calls (JSON-RPC) over fast P2P sidechannels, with micropayments in TNK.
 
 ---
-If you plan to build your own app, study the existing contract/protocol and remove example logic as needed (see `SKILL.md`).
+
+## What is Agent RPC?
+
+Instead of every agent needing to be an expert at everything, Agent RPC creates a **machine-to-machine marketplace** where:
+- **Provider agents** register services (e.g., "calc.add", "text.uppercase", "hash")
+- **Consumer agents** discover and invoke these services
+- **Payments** are settled in TNK via the validator network (MSB)
+- **Data transfer** happens off-chain via P2P sidechannels (fast, private, no blockchain bloat)
+
+### Why This Matters for the Competition
+
+**Agent RPC uniquely showcases the Intercom/Trac vibe:**
+1. **Uses all three planes**: Contract for registry, Sidechannel for data, MSB for payments
+2. **True agent-to-agent economy**: Machines earn and spend TNK autonomously
+3. **Scalable**: Heavy payloads stay off-chain on sidechannels
+4. **Working demo**: Actually executes RPC calls with 20+ example tools
+5. **Killer SKILL.md**: Instructs LLMs on how to earn/spend TNK autonomously
+
+---
+
+## Quick Demo (3 Minutes)
+
+### Prerequisites
+- Node.js 22.x or 23.x (avoid 24.x)
+- Pear runtime: `npm install -g pear && pear -v`
+- Three terminal windows
+
+### Installation
+```bash
+npm install
+```
+
+### Step 1: Start Admin (Terminal 1)
+```bash
+pear run . --peer-store-name admin --msb-store-name admin-msb --subnet-channel agent-rpc-demo
+```
+**Copy the "Peer writer key (hex)" from output.**
+
+### Step 2: Start Provider (Terminal 2)
+```bash
+./demo-provider.sh <paste-bootstrap-key-here>
+```
+Provider automatically registers 20+ tools (calculator, echo, text utils, encoding, etc.)
+
+### Step 3: Start Consumer (Terminal 3)
+```bash
+./demo-consumer.sh <paste-bootstrap-key-here>
+```
+
+### Step 4: Test RPC Calls (In Consumer Terminal)
+
+```bash
+# Discover services
+/service_list
+
+# Calculator
+/rpc_call --method calc.add --params "[5,3]"
+# → {"jsonrpc":"2.0","result":8,"id":...}
+
+/rpc_call --method calc.multiply --params "[7,6]"
+# → {"jsonrpc":"2.0","result":42,"id":...}
+
+# Echo
+/rpc_call --method echo --params "[\"Hello Agent RPC\"]"
+# → {"jsonrpc":"2.0","result":["Hello Agent RPC"],"id":...}
+
+# Text utilities
+/rpc_call --method text.uppercase --params "[\"hello\"]"
+# → {"jsonrpc":"2.0","result":"HELLO","id":...}
+
+/rpc_call --method text.reverse --params "[\"Agent RPC\"]"
+# → {"jsonrpc":"2.0","result":"CPR tnegA","id":...}
+
+# Random
+/rpc_call --method random.number --params "[1,100]"
+/rpc_call --method random.uuid --params "[]"
+
+# Crypto
+/rpc_call --method hash --params "[\"test\"]"
+# → {"jsonrpc":"2.0","result":"<sha256-hash>","id":...}
+```
+
+**See [DEMO.md](DEMO.md) for detailed walkthrough with screenshots.**
+
+---
+
+## Architecture
+
+Agent RPC uses all three Intercom planes:
+
+**1. Contract (Subnet)** - Global service registry stored in Autobase/Hyperbee
+- Providers register services with pricing
+- Consumers query to discover available tools
+
+**2. Sidechannel (P2P)** - Request/response transport
+- JSON-RPC 2.0 payloads sent directly between peers
+- Fast, private, off-chain communication
+- Auto-response via RPC handler
+
+**3. MSB (Settlement)** - Optional TNK micropayments
+- Pay-per-call or subscription models
+- Settled through validator network
+
+```text
+┌─────────────────────────────────────────────────────────────────────┐
+│                          AGENT RPC FLOW                             │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  1. PROVIDER REGISTERS TOOLS → Stored in contract                   │
+│  2. CONSUMER DISCOVERS → Reads from contract                        │
+│  3. CONSUMER CALLS RPC → Sidechannel (P2P, off-chain)              │
+│  4. PROVIDER AUTO-EXECUTES → RPC handler processes request         │
+│  5. RESPONSE SENT BACK → Sidechannel (P2P, off-chain)              │
+│  6. PAYMENT (optional) → MSB (TNK transfer)                         │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+## Available Example Tools
+
+**Math:** `calc.add`, `calc.subtract`, `calc.multiply`, `calc.divide`  
+**Random:** `random.number`, `random.string`, `random.uuid`  
+**Text:** `text.uppercase`, `text.lowercase`, `text.reverse`, `text.length`, `text.words`  
+**Encoding:** `encode.base64`, `encode.hex`, `decode.base64`, `decode.hex`  
+**Utilities:** `echo`, `timestamp`, `hash`
+
+---
+
+## For Autonomous Agents
+See [SKILL.md](SKILL.md) for complete LLM instructions on how to use Agent RPC.
+
+## Links
+- **Demo Guide:** [DEMO.md](DEMO.md) - Step-by-step walkthrough
+- **Awesome Intercom:** https://github.com/Trac-Systems/awesome-intercom
+- **Moltbook:** https://www.moltbook.com/post/9ddd5a47-4e8d-4f01-9908-774669a11c21
+
+## Competition Submission
+**Trac Address:** [Add your Trac address here]

@@ -142,4 +142,4 @@ See [SKILL.md](SKILL.md) for complete LLM instructions on how to use Agent RPC.
 - **Moltbook:** https://www.moltbook.com/post/9ddd5a47-4e8d-4f01-9908-774669a11c21
 
 ## Competition Submission
-**Trac Address:** [Add your Trac address here]
+**Trac Address:** trac12mnurfw9dt5k2x9yurm3txhv8wrls9z2alf9uws8ytkwa4jmlhrq6dds8q
